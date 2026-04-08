@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Bot CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+        <div class="flex items-center mb-6">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-sky-500 flex items-center justify-center font-bold text-white mr-3">
+                SB
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">Social Bot CRM</h1>
+                <p class="text-xs text-slate-400 mt-1">Login to manage DM automation across channels</p>
+            </div>
+        </div>
+
+        <form onsubmit="login(event)" class="space-y-4">
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Email</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                        <i class="fas fa-envelope"></i>
+                    </span>
+                    <input type="email" id="login-email" required
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none transition"
+                           placeholder="admin@example.com">
+                </div>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Password</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                        <i class="fas fa-lock"></i>
+                    </span>
+                    <input type="password" id="login-password" required
+                           class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none transition"
+                           placeholder="••••••••">
+                </div>
+            </div>
+            <p id="login-error" class="text-xs text-red-400 hidden">Invalid email or password.</p>
+            <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+
+        <p class="mt-4 text-[11px] text-slate-500 text-center">
+            Default: <code>admin@example.com / password123</code> (or your <code>.env</code> ADMIN_EMAIL / ADMIN_PASSWORD)
+        </p>
+        <p class="mt-2 text-[11px] text-slate-500 text-center">
+            Want SaaS-style accounts? <span class="text-slate-300">This demo runs as a single admin panel.</span>
+        </p>
+    </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell" class="hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-slate-900 border-r border-slate-800 p-6 z-40 overflow-y-auto">
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-transparent bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400 bg-clip-text">
+                    Social Bot
+                </h1>
+                <p class="text-xs text-slate-400">DM Automation CRM</p>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- MAIN NAV -->
+        <div class="mb-6">
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Navigation</h3>
+            <nav class="space-y-1 text-sm">
+                <button class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800 text-white"
+                        data-section="dashboard" onclick="switchSection('dashboard', event)">
+                    <span><i class="fas fa-chart-pie mr-2 text-indigo-400"></i> Overview</span>
+                    <span class="text-[9px] uppercase text-slate-400">Default</span>
+                </button>
+                <button class="nav-item w-full flex items-center px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800"
+                        data-section="inbox" onclick="switchSection('inbox', event)">
+                    <span><i class="fas fa-inbox mr-2 text-sky-400"></i> DM Inbox</span>
+                </button>
+                <button class="nav-item w-full flex items-center px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800"
+                        data-section="automations" onclick="switchSection('automations', event)">
+                    <span><i class="fas fa-bolt mr-2 text-amber-400"></i> DM Automations</span>
+                </button>
+                <button class="nav-item w-full flex items-center px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800"
+                        data-section="analytics" onclick="switchSection('analytics', event)">
+                    <span><i class="fas fa-chart-line mr-2 text-emerald-400"></i> Analytics</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="space-y-6">
+
+            <!-- System Status -->
+            <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                    <i class="fas fa-signal text-emerald-400"></i> System Status
+                </h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span>Server:</span>
+                        <span id="server-status" class="text-amber-400 font-bold">Checking...</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Webhook:</span>
+                        <span id="webhook-status" class="text-amber-400 font-bold">Checking...</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Instagram:</span>
+                        <span id="ig-status" class="text-slate-400 font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Facebook:</span>
+                        <span id="fb-status" class="text-slate-400 font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>X (Twitter):</span>
+                        <span id="x-status" class="text-slate-400 font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Auto Reply:</span>
+                        <span id="auto-reply-status" class="text-slate-400 font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>AI Assistant:</span>
+                        <span id="ai-status" class="text-slate-400 font-bold">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channels -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-200 mb-3">Connected Channels</h3>
+                <div class="space-y-2">
+                    <div class="w-full p-3 rounded-lg bg-slate-800 text-left text-sm border border-slate-700 flex justify-between items-center">
+                        <div>
+                            <i class="fab fa-instagram text-pink-500 mr-2"></i>
+                            <span class="font-semibold">Instagram DM</span>
+                            <br><span class="text-xs text-slate-400">Private inbox</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/30">Demo</span>
+                    </div>
+                    <div class="w-full p-3 rounded-lg bg-slate-800 text-left text-sm border border-slate-700 flex justify-between items-center">
+                        <div>
+                            <i class="fab fa-facebook text-blue-500 mr-2"></i>
+                            <span class="font-semibold">Facebook Page DM</span>
+                            <br><span class="text-xs text-slate-400">Page inbox</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30">Demo</span>
+                    </div>
+                    <div class="w-full p-3 rounded-lg bg-slate-800 text-left text-sm border border-slate-700 flex justify-between items-center">
+                        <div>
+                            <i class="fab fa-x-twitter text-sky-400 mr-2"></i>
+                            <span class="font-semibold">X (Twitter) DM</span>
+                            <br><span class="text-xs text-slate-400">Direct messages</span>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30">Demo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-gradient-to-r from-indigo-600 to-sky-500 rounded-lg p-4 text-white">
+                <p class="text-xs opacity-80 mb-1">Messages (all time)</p>
+                <p class="text-3xl font-bold" id="quick-count">0</p>
+                <p class="text-[11px] opacity-80 mt-1">DMs across Instagram, Facebook & X</p>
+            </div>
+
+            <!-- Extra Actions -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-200 mb-2">Actions</h3>
+                <button onclick="refreshDashboard()" class="w-full p-2 rounded text-sm text-slate-100 bg-slate-800 hover:bg-slate-700 flex items-center justify-between transition mb-1">
+                    <span><i class="fas fa-sync-alt mr-2"></i>Refresh Data</span>
+                    <span class="text-[10px] text-slate-400">Ctrl+R</span>
+                </button>
+                <button onclick="openSettings()" class="w-full p-2 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-800 flex items-center transition">
+                    <i class="fas fa-sliders-h mr-2"></i>Settings
+                </button>
+                <button onclick="logout()" class="w-full p-2 rounded text-sm text-rose-400 hover:text-rose-300 hover:bg-slate-800 flex items-center transition mt-1">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content" class="ml-64 transition-all duration-200">
+        <!-- TOP BAR -->
+        <header class="bg-slate-900 border-b border-slate-800 p-6 sticky top-0 z-20">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-lg">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-semibold">Social Bot CRM</h2>
+                        <p class="text-xs text-slate-400 mt-1">DM automation & inbox for Instagram, Facebook & X</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleAiDrawer()" class="hidden sm:inline-flex px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs items-center gap-2">
+                        <i class="fas fa-robot text-emerald-400"></i>
+                        Ask AI
+                    </button>
+                    <button onclick="refreshDashboard()" class="hidden md:inline-flex p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-lg">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <!-- Profile dropdown -->
+                    <div class="relative">
+                        <button id="profile-button" onclick="toggleProfileMenu()"
+                                class="w-9 h-9 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 flex items-center justify-center text-white text-xs font-semibold focus:outline-none">
+                            SB
+                        </button>
+                        <div id="profile-menu"
+                             class="hidden absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-xl shadow-xl py-2 text-xs">
+                            <div class="px-3 py-2 border-b border-slate-800">
+                                <p class="text-[10px] text-slate-500">Logged in as</p>
+                                <p id="profile-email" class="text-[11px] font-semibold text-slate-200 truncate">admin@example.com</p>
+                            </div>
+                            <button onclick="openSettings()" class="w-full text-left px-3 py-2 hover:bg-slate-800 flex items-center gap-2">
+                                <i class="fas fa-sliders-h text-slate-400"></i> Settings
+                            </button>
+                            <button onclick="toggleAiDrawer()" class="w-full text-left px-3 py-2 hover:bg-slate-800 flex items-center gap-2">
+                                <i class="fas fa-robot text-emerald-400"></i> AI Assistant
+                            </button>
+                            <button onclick="logout()" class="w-full text-left px-3 py-2 hover:bg-slate-800 flex items-center gap-2 text-rose-400">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECTIONS WRAPPER -->
+        <section class="p-6 space-y-6">
+
+            <!-- DASHBOARD / OVERVIEW -->
+            <section id="section-dashboard" class="space-y-6">
+                <!-- TOP STATS -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Total DMs</h3>
+                            <i class="fas fa-envelope text-sky-400 text-lg opacity-50"></i>
+                        </div>
+                        <p class="text-3xl font-semibold" id="stat-total">0</p>
+                        <p class="text-[11px] text-emerald-400 mt-1">Combined across all channels</p>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Instagram</h3>
+                            <i class="fab fa-instagram text-pink-500 text-lg opacity-50"></i>
+                        </div>
+                        <p class="text-3xl font-semibold text-pink-400" id="stat-ig">0</p>
+                        <p class="text-[11px] text-slate-500 mt-1">DMs</p>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wide">Facebook</h3>
+                            <i class="fab fa-facebook text-blue-500 text-lg opacity-50"></i>
+                        </div>
+                        <p class="text-3xl font-semibold text-blue-400" id="stat-fb">0</p>
+                        <p class="text-[11px] text-slate-500 mt-1">DMs</p>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wide">X (Twitter)</h3>
+                            <i class="fab fa-x-twitter text-sky-400 text-lg opacity-50"></i>
+                        </div>
+                        <p class="text-3xl font-semibold text-sky-400" id="stat-x">0</p>
+                        <p class="text-[11px] text-slate-500 mt-1">DMs</p>
+                    </div>
+                </div>
+
+                <!-- MAIN GRID -->
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                    <!-- LEFT (2 cols) -->
+                    <div class="xl:col-span-2 space-y-6">
+
+                        <!-- RECENT CONVERSATIONS -->
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                            <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row justify-between md:items-center gap-3">
+                                <div>
+                                    <h3 class="text-sm font-semibold flex items-center gap-2">
+                                        <i class="fas fa-comments text-indigo-400"></i>
+                                        Recent Conversations
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500">Latest 50 DMs across all platforms</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="filterMsg('all', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 transition">
+                                        All
+                                    </button>
+                                    <button onclick="filterMsg('Instagram', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                        Instagram
+                                    </button>
+                                    <button onclick="filterMsg('Facebook', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                        Facebook
+                                    </button>
+                                    <button onclick="filterMsg('X', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                        X
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="messages-list" class="divide-y divide-slate-800 max-h-96 overflow-y-auto">
+                                <div class="p-6 text-slate-500 text-center text-sm">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Loading messages...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ACTIVITY LOG -->
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                            <div class="p-4 border-b border-slate-800">
+                                <h3 class="text-sm font-semibold flex items-center gap-2">
+                                    <i class="fas fa-history text-emerald-400"></i>System Activity
+                                </h3>
+                            </div>
+                            <div id="activity-log" class="p-4 max-h-64 overflow-y-auto font-mono text-[11px] space-y-1 bg-slate-950">
+                                <p class="text-slate-500">[<span class="text-emerald-400">INFO</span>] Dashboard initialized</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT COLUMN -->
+                    <div class="space-y-6">
+
+                        <!-- TEST MESSAGE -->
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-sm font-semibold flex items-center gap-2">
+                                        <i class="fas fa-flask text-amber-400"></i>DM Test Sandbox
+                                    </h3>
+                                    <p class="text-[11px] text-slate-500">Simulate a DM and see the automation reply.</p>
+                                </div>
+                                <span class="text-[10px] text-slate-400 uppercase tracking-wide bg-slate-950 px-2 py-1 rounded-full border border-slate-700">
+                                    Sandbox
+                                </span>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[11px] text-slate-400 mb-1 block">Sender name</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <input type="text" id="test-sender" value="test_user"
+                                               class="w-full bg-slate-800 border border-slate-700 rounded px-8 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[11px] text-slate-400 mb-1 block">Message text</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
+                                            <i class="fas fa-comment-alt"></i>
+                                        </span>
+                                        <input type="text" id="test-message" placeholder="Type what a customer might DM you..."
+                                               class="w-full bg-slate-800 border border-slate-700 rounded px-8 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[11px] text-slate-400 mb-1 block">Channel</label>
+                                    <select id="test-channel"
+                                            class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition">
+                                        <option value="test">Test (no channel)</option>
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="Facebook">Facebook</option>
+                                        <option value="X">X</option>
+                                    </select>
+                                </div>
+                                <button onclick="sendTestMsg()"
+                                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
+                                    <i class="fas fa-paper-plane"></i>Send Test DM
+                                </button>
+                            </div>
+                            <div id="test-result" class="mt-4 hidden border-t border-slate-800 pt-3">
+                                <p class="text-[11px] text-slate-400 mb-1">Bot reply</p>
+                                <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-[11px] text-emerald-300 font-mono" id="test-reply-text"></div>
+                            </div>
+                        </div>
+
+                        <!-- KEY STATS MINI -->
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3 text-[11px]">
+                            <h3 class="text-sm font-semibold mb-1 flex items-center gap-2">
+                                <i class="fas fa-gauge-high text-sky-400"></i>Account Snapshot
+                            </h3>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Unique senders</span>
+                                <span id="stat-unique-senders" class="font-semibold text-slate-100">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Configured keywords</span>
+                                <span id="stat-keywords" class="font-semibold text-slate-100">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">AI assistant</span>
+                                <span id="stat-ai-mini" class="font-semibold text-emerald-400">-</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- INBOX SECTION -->
+            <section id="section-inbox" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-inbox text-sky-400"></i> DM Inbox & CRM
+                        </h2>
+                        <p class="text-[11px] text-slate-500">Unified DM view across Instagram, Facebook & X.</p>
+                    </div>
+                    <button onclick="refreshDashboard()" class="px-3 py-1 text-xs rounded bg-slate-900 hover:bg-slate-800 border border-slate-700">
+                        <i class="fas fa-sync-alt mr-1"></i>Refresh
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <!-- Messages list -->
+                    <div class="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                        <div class="p-3 border-b border-slate-800 flex flex-wrap items-center gap-3 justify-between">
+                            <div class="flex gap-2">
+                                <button onclick="filterMsg('all', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 transition">
+                                    All DMs
+                                </button>
+                                <button onclick="filterMsg('Instagram', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                    Instagram
+                                </button>
+                                <button onclick="filterMsg('Facebook', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                    Facebook
+                                </button>
+                                <button onclick="filterMsg('X', event)" class="filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition">
+                                    X
+                                </button>
+                            </div>
+                            <input id="inbox-search" type="text" placeholder="Search sender or text..."
+                                   class="bg-slate-950 border border-slate-700 text-[11px] rounded px-3 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500 w-56"
+                                   oninput="displayMessages()">
+                        </div>
+                        <div id="inbox-messages-list" class="divide-y divide-slate-800 max-h-[520px] overflow-y-auto text-sm">
+                        </div>
+                    </div>
+
+                    <!-- "Contacts" list extracted from senders -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-[11px]">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-semibold flex items-center gap-2">
+                                <i class="fas fa-users text-emerald-400"></i> DM Contacts
+                            </h3>
+                            <span id="contacts-count" class="text-slate-500">0</span>
+                        </div>
+                        <div id="contacts-list" class="space-y-1 max-h-[520px] overflow-y-auto">
+                            <p class="text-slate-500 text-[11px]">No DMs yet – send a test message from the Overview tab.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AUTOMATIONS SECTION -->
+            <section id="section-automations" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-bolt text-amber-400"></i> DM Automations (Keywords)
+                        </h2>
+                        <p class="text-[11px] text-slate-500">
+                            Configure simple keyword-based DM replies. Great for welcome messages, FAQs, and offers.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Create keyword -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-4">
+                        <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <i class="fas fa-plus-circle text-sky-400"></i>New keyword rule
+                        </h3>
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <label class="text-[11px] text-slate-400 mb-1 block">Keyword (lowercase works best)</label>
+                                <input type="text" id="keyword-input" placeholder="e.g., hello, price, support"
+                                       class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 mb-1 block">Reply message</label>
+                                <textarea id="reply-input" placeholder="Your DM reply when the keyword appears..."
+                                          class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none transition h-24 resize-none"></textarea>
+                            </div>
+                            <button onclick="addKeywordBtn()"
+                                    class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
+                                <i class="fas fa-save"></i>Save keyword rule
+                            </button>
+                        </div>
+                        <p class="mt-2 text-[10px] text-slate-500">
+                            The bot looks for the keyword anywhere in the user's DM (case-insensitive).
+                        </p>
+                    </div>
+
+                    <!-- Existing keywords -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-semibold flex items-center gap-2">
+                                <i class="fas fa-list text-emerald-400"></i>Active rules
+                            </h3>
+                            <span class="text-[11px] text-slate-500" id="keywords-count-label">0 rules</span>
+                        </div>
+                        <div id="keywords-list" class="space-y-2 max-h-72 overflow-y-auto text-xs">
+                            <p class="text-slate-500 text-[11px] text-center">Loading keywords...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ANALYTICS SECTION -->
+            <section id="section-analytics" class="hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-chart-line text-emerald-400"></i> DM Analytics
+                        </h2>
+                        <p class="text-[11px] text-slate-500">
+                            Light-weight analytics based on your logged DM conversations.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Messages over time -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                            <h3 class="text-sm font-semibold flex items-center gap-2">
+                                <i class="fas fa-wave-square text-sky-400"></i>Volume (last 7 days)
+                            </h3>
+                            <span class="text-[11px] text-slate-500">All channels</span>
+                        </div>
+                        <div class="p-4 bg-slate-950">
+                            <canvas id="messages-chart" class="w-full h-40"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Channel breakdown -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                            <h3 class="text-sm font-semibold flex items-center gap-2">
+                                <i class="fas fa-circle-notch text-indigo-400"></i>Channel split
+                            </h3>
+                            <span class="text-[11px] text-slate-500">Instagram vs Facebook vs X</span>
+                        </div>
+                        <div class="p-4 bg-slate-950">
+                            <canvas id="channels-chart" class="w-full h-40"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+</div>
+
+<!-- AI ASSISTANT DRAWER -->
+<div id="ai-drawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-slate-900 border-l border-slate-800 transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div>
+            <p class="text-sm font-semibold flex items-center gap-2">
+                <i class="fas fa-robot text-emerald-400"></i>AI Assistant
+            </p>
+            <p class="text-[11px] text-slate-500">Ask for reply ideas, content, or technical help.</p>
+        </div>
+        <button onclick="toggleAiDrawer()" class="text-slate-400 hover:text-white">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div id="ai-chat-log" class="flex-1 p-4 space-y-3 overflow-y-auto bg-slate-950 text-sm">
+        <div class="text-slate-400 text-[11px] text-center">
+            <i class="fas fa-sparkles mr-1"></i>Start by asking something like
+            <span class="italic">&ldquo;Write a welcome DM for new Instagram followers.&rdquo;</span>
+        </div>
+    </div>
+    <div class="p-4 border-t border-slate-800 bg-slate-900">
+        <form onsubmit="sendAiMessage(event)" class="flex flex-col gap-2">
+            <div class="flex gap-2">
+                <textarea id="ai-input" rows="2" placeholder="Ask the assistant..."
+                          class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                <button type="submit"
+                        class="h-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-between">
+                <p class="text-[10px] text-slate-500">
+                    Prompts + history are sent securely to your backend.
+                </p>
+                <button type="button" onclick="clearAiChat()" class="text-[10px] text-slate-400 hover:text-slate-200">
+                    <i class="fas fa-trash mr-1"></i>Clear
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40 items-center justify-center">
+    <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i class="fas fa-sliders-h text-indigo-400"></i>Settings
+            </h3>
+            <button onclick="closeSettings()" class="text-slate-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+                <div>
+                    <p class="text-sm font-semibold">Enable auto replies</p>
+                    <p class="text-[11px] text-slate-500">Turn off to pause automatic DM responses.</p>
+                </div>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="setting-auto-reply" class="sr-only" onchange="saveSettings()">
+                    <span class="w-10 h-5 bg-slate-700 rounded-full flex items-center px-1 transition">
+                        <span class="w-4 h-4 bg-white rounded-full transform transition"></span>
+                    </span>
+                </label>
+            </div>
+            <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
+                <div>
+                    <p class="text-sm font-semibold">Enable AI assistant</p>
+                    <p class="text-[11px] text-slate-500">Disable if you don't have an OpenAI key configured.</p>
+                </div>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="setting-ai" class="sr-only" onchange="saveSettings()">
+                    <span class="w-10 h-5 bg-slate-700 rounded-full flex items-center px-1 transition">
+                        <span class="w-4 h-4 bg-white rounded-full transform transition"></span>
+                    </span>
+                </label>
+            </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-4">
+            Changes are applied immediately and affect DM automation & AI behaviour across all channels.
+        </p>
+    </div>
+</div>
+
+<script>
+const API_BASE = 'http://127.0.0.1:8000'; // change to your ngrok URL if needed
+
+let allMessages = [];
+let currentFilter = 'all';
+let messagesInterval = null;
+let messagesChart = null;
+let channelsChart = null;
+let aiHistory = [];
+
+// ---------- AUTH & API WRAPPER ----------
+
+async function apiFetch(path, options = {}) {
+    const token = localStorage.getItem('authToken');
+    const headers = options.headers ? {...options.headers} : {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    try {
+        const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+        return res;
+    } catch (err) {
+        console.error('apiFetch error:', err);
+        addLog('ERROR', `Network error: ${err.message}`);
+        throw err;
+    }
+}
+
+function handleAuthError(res) {
+    if (res.status === 401 || res.status === 403) {
+        addLog('ERROR', 'Session expired or unauthorized. Please log in again.');
+        forceLogout();
+        return true;
+    }
+    return false;
+}
+
+function forceLogout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authEmail');
+    if (messagesInterval) clearInterval(messagesInterval);
+    document.getElementById('app-shell').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
+}
+
+async function login(event) {
+    event.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const errorEl = document.getElementById('login-error');
+    errorEl.classList.add('hidden');
+
+    try {
+        const res = await fetch(`${API_BASE}/api/login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.token) {
+            errorEl.textContent = data.detail || 'Invalid email or password.';
+            errorEl.classList.remove('hidden');
+            addLog('ERROR', 'Login failed');
+            return;
+        }
+
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('authEmail', data.email || email);
+
+        const profileEmailEl = document.getElementById('profile-email');
+        if (profileEmailEl) profileEmailEl.textContent = data.email || email;
+
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-shell').classList.remove('hidden');
+
+        addLog('SUCCESS', 'Login successful');
+        switchSection('dashboard');
+        await refreshDashboard();
+        if (messagesInterval) clearInterval(messagesInterval);
+        messagesInterval = setInterval(loadMessages, 8000);
+    } catch (error) {
+        errorEl.textContent = 'Unable to reach server.';
+        errorEl.classList.remove('hidden');
+        addLog('ERROR', 'Login network error');
+    }
+}
+
+async function logout() {
+    try {
+        await apiFetch('/api/logout', { method: 'POST' });
+    } catch (e) {}
+    forceLogout();
+    addLog('INFO', 'Logged out');
+}
+
+// ---------- SIDEBAR & PROFILE ----------
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main-content');
+    sidebar.classList.toggle('hidden');
+    if (sidebar.classList.contains('hidden')) {
+        main.classList.remove('ml-64');
+    } else {
+        main.classList.add('ml-64');
+    }
+}
+
+function toggleProfileMenu() {
+    const menu = document.getElementById('profile-menu');
+    if (!menu) return;
+    menu.classList.toggle('hidden');
+}
+
+window.addEventListener('click', (e) => {
+    const menu = document.getElementById('profile-menu');
+    const btn = document.getElementById('profile-button');
+    if (!menu || !btn) return;
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+// ---------- SECTION NAV ----------
+
+function switchSection(sectionId, evt) {
+    document.querySelectorAll('[id^="section-"]').forEach(sec => sec.classList.add('hidden'));
+    const target = document.getElementById(`section-${sectionId}`);
+    if (target) target.classList.remove('hidden');
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white');
+        btn.classList.add('text-slate-300');
+    });
+    if (evt && evt.currentTarget) {
+        evt.currentTarget.classList.add('bg-slate-800', 'text-white');
+        evt.currentTarget.classList.remove('text-slate-300');
+    } else {
+        const activeBtn = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-slate-800', 'text-white');
+            activeBtn.classList.remove('text-slate-300');
+        }
+    }
+}
+
+// ---------- STATUS & DATA ----------
+
+async function checkStatus() {
+    try {
+        const res = await apiFetch('/api/status');
+        if (handleAuthError(res)) return;
+        const data = await res.json();
+
+        setStatusLabel('server-status', data.server === 'online' ? 'Online' : 'Offline',
+            data.server === 'online' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold');
+
+        setStatusLabel('webhook-status', data.webhook || 'Unknown',
+            data.webhook === 'active' ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold');
+
+        setStatusLabel('ig-status', data.instagram_id ? 'Connected' : 'Not configured',
+            data.instagram_id ? 'text-emerald-400 font-bold' : 'text-slate-400 font-bold');
+
+        setStatusLabel('fb-status', data.facebook_page_id ? 'Connected' : 'Not configured',
+            data.facebook_page_id ? 'text-emerald-400 font-bold' : 'text-slate-400 font-bold');
+
+        setStatusLabel('x-status', data.x_bot_user_id ? 'Connected' : 'Not configured',
+            data.x_bot_user_id ? 'text-emerald-400 font-bold' : 'text-slate-400 font-bold');
+
+        setStatusLabel('auto-reply-status', data.auto_reply ? 'Enabled' : 'Disabled',
+            data.auto_reply ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold');
+
+        setStatusLabel('ai-status', data.ai_assistant_enabled ? 'Enabled' : 'Disabled',
+            data.ai_assistant_enabled ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold');
+
+        setText('stat-ai-mini', data.ai_assistant_enabled ? 'Enabled' : 'Disabled');
+        addLog('SUCCESS', 'Status loaded');
+    } catch (error) {
+        setStatusLabel('server-status', 'Offline', 'text-rose-400 font-bold');
+        setStatusLabel('webhook-status', 'Unknown', 'text-rose-400 font-bold');
+        addLog('ERROR', 'Cannot load status (auth or server issue)');
+    }
+}
+
+function setStatusLabel(id, text, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = cls;
+}
+
+// ---------- MESSAGES & STATS ----------
+
+async function loadMessages() {
+    try {
+        const res = await apiFetch('/api/messages');
+        if (handleAuthError(res)) return;
+        const data = await res.json();
+        if (!res.ok) {
+            addLog('ERROR', 'Failed to load messages');
+            return;
+        }
+        allMessages = data.messages || [];
+
+        updateStats();
+        displayMessages();
+        updateChart();
+        updateChannelChart();
+        updateContactsPanel();
+        addLog('INFO', `Loaded ${allMessages.length} messages`);
+    } catch (error) {
+        addLog('ERROR', 'Failed to load messages');
+    }
+}
+
+function updateStats() {
+    const total = allMessages.length;
+    const ig = allMessages.filter(m => m.channel === 'Instagram').length;
+    const fb = allMessages.filter(m => m.channel === 'Facebook').length;
+    const x = allMessages.filter(m => m.channel === 'X').length;
+
+    setText('stat-total', total);
+    setText('stat-ig', ig);
+    setText('stat-fb', fb);
+    setText('stat-x', x);
+    setText('quick-count', total);
+
+    // unique senders
+    const senders = new Set(allMessages.map(m => m.from || '').filter(Boolean));
+    setText('stat-unique-senders', senders.size);
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el !== null) el.textContent = String(val);
+}
+
+function displayMessages() {
+    const dashboardList = document.getElementById('messages-list');
+    const inboxList = document.getElementById('inbox-messages-list');
+    const search = (document.getElementById('inbox-search')?.value || '').toLowerCase();
+
+    if (!dashboardList) return;
+
+    let filtered = allMessages;
+    if (currentFilter !== 'all') {
+        filtered = filtered.filter(m => m.channel === currentFilter);
+    }
+    if (search) {
+        filtered = filtered.filter(m =>
+            (m.message || '').toLowerCase().includes(search) ||
+            (m.from || '').toLowerCase().includes(search)
+        );
+    }
+
+    if (filtered.length === 0) {
+        const emptyHtml = '<div class="p-6 text-slate-500 text-center text-sm">No messages yet. Send a test DM from the Overview tab.</div>';
+        dashboardList.innerHTML = emptyHtml;
+        if (inboxList) inboxList.innerHTML = emptyHtml;
+        return;
+    }
+
+    const channelIcons = {
+        'Instagram': '<i class="fab fa-instagram text-pink-500"></i>',
+        'Facebook': '<i class="fab fa-facebook text-blue-500"></i>',
+        'X': '<i class="fab fa-x-twitter text-sky-400"></i>',
+        'test': '<i class="fas fa-flask text-amber-400"></i>'
+    };
+
+    const renderCard = (msg) => {
+        const d = new Date(String(msg.timestamp).replace(' ', 'T'));
+        const timeStr = isNaN(d) ? msg.timestamp : d.toLocaleString();
+        return `
+        <div class="p-4 hover:bg-slate-950 transition">
+            <div class="flex items-start justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    ${channelIcons[msg.channel] || '<i class="fas fa-comment text-slate-400"></i>'}
+                    <span class="font-semibold text-sm">${msg.from}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-slate-400">${msg.channel || 'Unknown'}</span>
+                </div>
+                <span class="text-[10px] text-slate-500">${timeStr}</span>
+            </div>
+            <p class="text-xs text-slate-200 mb-1">${msg.message}</p>
+            <p class="text-[11px] text-emerald-400">→ ${msg.reply}</p>
+        </div>
+    `;
+    };
+
+    const lastN = filtered.slice(-50).reverse();
+    const html = lastN.map(renderCard).join('');
+    dashboardList.innerHTML = html;
+    if (inboxList) inboxList.innerHTML = html;
+}
+
+function filterMsg(channel, evt) {
+    currentFilter = channel;
+    displayMessages();
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.className = 'filter-btn px-3 py-1 rounded text-[11px] bg-slate-800 hover:bg-slate-700 transition';
+    });
+    if (evt && evt.currentTarget) {
+        evt.currentTarget.className = 'filter-btn px-3 py-1 rounded text-[11px] bg-indigo-600 text-white hover:bg-indigo-700 transition';
+    }
+}
+
+async function sendTestMsg() {
+    const sender = document.getElementById('test-sender').value.trim();
+    const message = document.getElementById('test-message').value.trim();
+    const channel = document.getElementById('test-channel').value;
+
+    if (!sender || !message) {
+        alert('Please enter sender and message');
+        return;
+    }
+
+    try {
+        addLog('INFO', `Sending test message from ${sender}`);
+        const res = await apiFetch('/api/test-message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({sender, message, channel})
+        });
+        if (handleAuthError(res)) return;
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            document.getElementById('test-message').value = '';
+            addLog('SUCCESS', `Test DM sent! Reply: ${data.reply}`);
+            const resultEl = document.getElementById('test-result');
+            const replyEl = document.getElementById('test-reply-text');
+            if (replyEl && resultEl) {
+                replyEl.textContent = data.reply;
+                resultEl.classList.remove('hidden');
+            }
+            await loadMessages();
+        } else {
+            addLog('ERROR', 'Failed to send test message');
+        }
+    } catch (error) {
+        addLog('ERROR', 'Failed to send test message');
+    }
+}
+
+// ---------- CONTACTS PANEL (from senders) ----------
+
+function updateContactsPanel() {
+    const list = document.getElementById('contacts-list');
+    const countEl = document.getElementById('contacts-count');
+    if (!list || !countEl) return;
+
+    const bySender = new Map();
+    allMessages.forEach(msg => {
+        const name = msg.from || 'Unknown';
+        if (!bySender.has(name)) {
+            bySender.set(name, {count: 0, last: msg.timestamp, channels: new Set()});
+        }
+        const entry = bySender.get(name);
+        entry.count += 1;
+        entry.last = msg.timestamp;
+        if (msg.channel) entry.channels.add(msg.channel);
+    });
+
+    const contacts = Array.from(bySender.entries())
+        .map(([name, info]) => ({
+            name,
+            count: info.count,
+            last: info.last,
+            channels: Array.from(info.channels)
+        }))
+        .sort((a, b) => b.count - a.count);
+
+    countEl.textContent = `${contacts.length} contacts`;
+
+    if (contacts.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-[11px]">No DMs yet – send a test message from the Overview tab.</p>';
+        return;
+    }
+
+    const channelBadges = (ch) => ch.map(c => {
+        const map = {
+            'Instagram': 'fab fa-instagram text-pink-500',
+            'Facebook': 'fab fa-facebook text-blue-500',
+            'X': 'fab fa-x-twitter text-sky-400'
+        };
+        const icon = map[c] || 'fas fa-comment text-slate-400';
+        return `<i class="${icon} text-xs mr-1"></i>`;
+    }).join('');
+
+    list.innerHTML = contacts.map(c => `
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-800 last:border-0">
+            <div class="flex flex-col">
+                <span class="font-semibold text-[11px] text-slate-100 truncate">${c.name}</span>
+                <span class="text-[10px] text-slate-500">${c.count} message(s)</span>
+            </div>
+            <div class="text-right text-[10px] text-slate-400">
+                <div>${channelBadges(c.channels)}</div>
+                <div class="mt-0.5">${c.last}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ---------- KEYWORDS (AUTOMATIONS) ----------
+
+async function loadKeywords() {
+    try {
+        const res = await apiFetch('/api/keywords');
+        if (handleAuthError(res)) return;
+        const data = await res.json();
+        if (!res.ok) {
+            addLog('ERROR', 'Failed to load keywords');
+            return;
+        }
+        const list = data.keywords || [];
+        displayKeywords(list);
+        setText('stat-keywords', list.length);
+        const lbl = document.getElementById('keywords-count-label');
+        if (lbl) lbl.textContent = `${list.length} rule${list.length === 1 ? '' : 's'}`;
+    } catch (error) {
+        addLog('ERROR', 'Failed to load keywords');
+    }
+}
+
+function displayKeywords(keywords) {
+    const list = document.getElementById('keywords-list');
+    if (!list) return;
+
+    if (keywords.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-[11px] text-center">No keyword rules yet. Add your first one on the left.</p>';
+        return;
+    }
+
+    list.innerHTML = keywords.map(kw => `
+        <div class="bg-slate-950 rounded p-3 flex justify-between items-start border border-slate-800">
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-[11px] text-indigo-200">${kw.keyword}</p>
+                <p class="text-[11px] text-slate-300 mt-1 whitespace-pre-line">${kw.reply}</p>
+            </div>
+            <button onclick="deleteKeyword('${kw.keyword}')" class="ml-2 text-rose-400 hover:text-rose-300 text-xs">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+async function addKeywordBtn() {
+    const keyword = document.getElementById('keyword-input').value.trim().toLowerCase();
+    const reply = document.getElementById('reply-input').value.trim();
+
+    if (!keyword || !reply) {
+        alert('Please enter keyword and reply');
+        return;
+    }
+
+    try {
+        const res = await apiFetch('/api/keywords', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({keyword, reply})
+        });
+        if (handleAuthError(res)) return;
+
+        if (res.ok) {
+            document.getElementById('keyword-input').value = '';
+            document.getElementById('reply-input').value = '';
+            addLog('SUCCESS', `Added keyword rule: ${keyword}`);
+            await loadKeywords();
+        } else {
+            addLog('ERROR', 'Failed to add keyword');
+        }
+    } catch (error) {
+        addLog('ERROR', 'Failed to add keyword');
+    }
+}
+
+async function deleteKeyword(keyword) {
+    if (!confirm(`Delete keyword "${keyword}"?`)) return;
+
+    try {
+        const res = await apiFetch(`/api/keywords/${keyword}`, {
+            method: 'DELETE'
+        });
+        if (handleAuthError(res)) return;
+
+        if (res.ok) {
+            addLog('INFO', `Deleted keyword: ${keyword}`);
+            await loadKeywords();
+        } else {
+            addLog('ERROR', 'Failed to delete keyword');
+        }
+    } catch (error) {
+        addLog('ERROR', 'Failed to delete keyword');
+    }
+}
+
+// ---------- ACTIVITY LOG ----------
+
+function addLog(type, message) {
+    const log = document.getElementById('activity-log');
+    if (!log) return;
+    const time = new Date().toLocaleTimeString();
+    const colors = {
+        'INFO': 'text-sky-400',
+        'SUCCESS': 'text-emerald-400',
+        'ERROR': 'text-rose-400'
+    };
+
+    const entry = document.createElement('p');
+    entry.className = 'text-slate-500';
+    entry.innerHTML = `[<span class="${colors[type] || 'text-slate-400'}">${type}</span>] ${time} - ${message}`;
+    log.insertBefore(entry, log.firstChild);
+
+    while (log.children.length > 80) {
+        log.removeChild(log.lastChild);
+    }
+}
+
+// ---------- SETTINGS ----------
+
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    loadSettings();
+}
+
+function closeSettings() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function loadSettings() {
+    try {
+        const res = await apiFetch('/api/settings');
+        if (handleAuthError(res)) return;
+        const data = await res.json();
+        if (!res.ok) {
+            addLog('ERROR', 'Failed to load settings');
+            return;
+        }
+        const chkAuto = document.getElementById('setting-auto-reply');
+        const chkAi = document.getElementById('setting-ai');
+        if (chkAuto) chkAuto.checked = !!data.auto_reply;
+        if (chkAi) chkAi.checked = !!data.ai_assistant_enabled;
+        if (chkAuto) updateToggleVisual(chkAuto);
+        if (chkAi) updateToggleVisual(chkAi);
+    } catch (e) {
+        addLog('ERROR', 'Failed to load settings');
+    }
+}
+
+async function saveSettings() {
+    const chkAuto = document.getElementById('setting-auto-reply');
+    const chkAi = document.getElementById('setting-ai');
+    if (chkAuto) updateToggleVisual(chkAuto);
+    if (chkAi) updateToggleVisual(chkAi);
+    try {
+        const res = await apiFetch('/api/settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                auto_reply: chkAuto ? chkAuto.checked : undefined,
+                ai_assistant_enabled: chkAi ? chkAi.checked : undefined
+            })
+        });
+        if (handleAuthError(res)) return;
+        if (res.ok) {
+            addLog('SUCCESS', 'Settings updated');
+            await checkStatus();
+        } else {
+            addLog('ERROR', 'Failed to update settings');
+        }
+    } catch (error) {
+        addLog('ERROR', 'Failed to update settings');
+    }
+}
+
+function updateToggleVisual(chk) {
+    const wrapper = chk.parentElement.querySelector('span.w-10');
+    const knob = wrapper.querySelector('span.w-4');
+    if (chk.checked) {
+        wrapper.classList.remove('bg-slate-700');
+        wrapper.classList.add('bg-indigo-500');
+        knob.classList.add('translate-x-4');
+    } else {
+        wrapper.classList.add('bg-slate-700');
+        wrapper.classList.remove('bg-indigo-500');
+        knob.classList.remove('translate-x-4');
+    }
+}
+
+// ---------- CHARTS ----------
+
+function updateChart() {
+    if (!window.Chart) return;
+    const canvas = document.getElementById('messages-chart');
+    if (!canvas) return;
+
+    const now = new Date();
+    const days = [];
+    const counts = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        days.push(key);
+        counts.push(0);
+    }
+
+    const indexByDay = {};
+    days.forEach((d, i) => indexByDay[d] = i);
+
+    allMessages.forEach(msg => {
+        const d = new Date(String(msg.timestamp).replace(' ', 'T'));
+        if (isNaN(d)) return;
+        const key = d.toISOString().slice(0, 10);
+        if (key in indexByDay) {
+            counts[indexByDay[key]] += 1;
+        }
+    });
+
+    const labels = days.map(d => d.slice(5));
+
+    if (!messagesChart) {
+        const ctx = canvas.getContext('2d');
+        messagesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Messages',
+                    data: counts,
+                    tension: 0.35,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#9ca3af',
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#6b7280', font: { size: 10 } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: { color: '#6b7280', font: { size: 10 }, stepSize: 1 },
+                        grid: { color: '#1f2937' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    } else {
+        messagesChart.data.labels = labels;
+        messagesChart.data.datasets[0].data = counts;
+        messagesChart.update();
+    }
+}
+
+function updateChannelChart() {
+    if (!window.Chart) return;
+    const canvas = document.getElementById('channels-chart');
+    if (!canvas) return;
+
+    const ig = allMessages.filter(m => m.channel === 'Instagram').length;
+    const fb = allMessages.filter(m => m.channel === 'Facebook').length;
+    const x = allMessages.filter(m => m.channel === 'X').length;
+
+    const data = [ig, fb, x];
+    const labels = ['Instagram', 'Facebook', 'X'];
+
+    if (!channelsChart) {
+        const ctx = canvas.getContext('2d');
+        channelsChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#9ca3af',
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    } else {
+        channelsChart.data.datasets[0].data = data;
+        channelsChart.update();
+    }
+}
+
+// ---------- AI ASSISTANT DRAWER ----------
+
+function toggleAiDrawer() {
+    const drawer = document.getElementById('ai-drawer');
+    if (!drawer) return;
+    if (drawer.classList.contains('translate-x-full')) {
+        drawer.classList.remove('translate-x-full');
+    } else {
+        drawer.classList.add('translate-x-full');
+    }
+}
+
+function appendAiBubble(role, text) {
+    const log = document.getElementById('ai-chat-log');
+    if (!log) return;
+    const wrapper = document.createElement('div');
+    const isUser = role === 'user';
+
+    wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+    wrapper.innerHTML = `
+        <div class="max-w-[80%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed ${
+            isUser
+                ? 'bg-indigo-600 text-white rounded-br-none'
+                : 'bg-slate-800 text-slate-100 rounded-bl-none'
+        }">
+            ${text.replace(/\n/g, '<br>')}
+        </div>
+    `;
+    log.appendChild(wrapper);
+    log.scrollTop = log.scrollHeight;
+}
+
+function clearAiChat() {
+    aiHistory = [];
+    const log = document.getElementById('ai-chat-log');
+    if (!log) return;
+    log.innerHTML = `
+        <div class="text-slate-400 text-[11px] text-center">
+            <i class="fas fa-sparkles mr-1"></i>Chat cleared. Ask anything related to your DM automation.
+        </div>
+    `;
+}
+
+async function sendAiMessage(event) {
+    if (event) event.preventDefault();
+    const input = document.getElementById('ai-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendAiBubble('user', text);
+    aiHistory.push({ role: 'user', content: text });
+    input.value = '';
+
+    appendAiBubble('assistant', '<span class="text-slate-400"><i class="fas fa-spinner fa-spin mr-1"></i>Thinking...</span>');
+
+    try {
+        const res = await apiFetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: text, history: aiHistory })
+        });
+        if (handleAuthError(res)) {
+            const log = document.getElementById('ai-chat-log');
+            if (log && log.lastChild) log.removeChild(log.lastChild);
+            appendAiBubble('assistant', 'Session expired. Please log in again.');
+            return;
+        }
+        const data = await res.json();
+
+        const log = document.getElementById('ai-chat-log');
+        if (log && log.lastChild) log.removeChild(log.lastChild);
+
+        const reply = data.reply || 'No reply';
+        aiHistory.push({ role: 'assistant', content: reply });
+        appendAiBubble('assistant', reply);
+        addLog('INFO', 'AI assistant replied');
+    } catch (e) {
+        const log = document.getElementById('ai-chat-log');
+        if (log && log.lastChild) log.removeChild(log.lastChild);
+        appendAiBubble('assistant', 'Something went wrong talking to the AI backend.');
+        addLog('ERROR', 'AI assistant error');
+    }
+}
+
+// ---------- REFRESH DASHBOARD ----------
+
+async function refreshDashboard() {
+    addLog('INFO', 'Refreshing dashboard...');
+    await checkStatus();
+    await loadMessages();
+    await loadKeywords();
+    const email = localStorage.getItem('authEmail');
+    if (email) {
+        const profileEmailEl = document.getElementById('profile-email');
+        if (profileEmailEl) profileEmailEl.textContent = email;
+    }
+}
+
+// ---------- INIT ----------
+
+async function init() {
+    const token = localStorage.getItem('authToken');
+    const email = localStorage.getItem('authEmail');
+    const profileEmailEl = document.getElementById('profile-email');
+    if (profileEmailEl && email) profileEmailEl.textContent = email;
+
+    if (!token) {
+        document.getElementById('app-shell').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+
+    switchSection('dashboard');
+    await refreshDashboard();
+    if (messagesInterval) clearInterval(messagesInterval);
+    messagesInterval = setInterval(loadMessages, 8000);
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
